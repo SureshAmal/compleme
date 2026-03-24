@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type Theme = "zed" | "vscode" | "github" | "sunset" | "sea";
+export type Theme = "zed" | "vscode" | "github" | "sunset" | "sea" | "dracula" | "nord" | "monokai" | "solarized-light" | "light-plus" | "catppuccin-latte";
 
 interface ThemeContextType {
   theme: Theme;

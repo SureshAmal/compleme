@@ -8,7 +8,13 @@ const options = [
   { value: "vscode", label: "VS Code" },
   { value: "github", label: "GitHub" },
   { value: "sunset", label: "Sunset" },
-  { value: "sea", label: "Sea Break" }
+  { value: "sea", label: "Sea Break" },
+  { value: "dracula", label: "Dracula" },
+  { value: "nord", label: "Nord" },
+  { value: "monokai", label: "Monokai" },
+  { value: "solarized-light", label: "Solarized Light" },
+  { value: "light-plus", label: "VS Light+" },
+  { value: "catppuccin-latte", label: "Catppuccin Latte" }
 ];
 
 export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val: any) => void }) {
@@ -27,6 +33,15 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0) {
+      const el = document.getElementById(`theme-option-${focusedIndex}`);
+      if (el) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [isOpen, focusedIndex]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -78,6 +93,7 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
         <div className="custom-select-dropdown">
           {options.map((opt, idx) => (
             <div
+              id={`theme-option-${idx}`}
               key={opt.value}
               className={`custom-select-item ${theme === opt.value ? "selected" : ""} ${focusedIndex === idx ? "focused" : ""}`}
               onClick={() => {

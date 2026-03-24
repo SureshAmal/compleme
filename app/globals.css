@@ -66,6 +66,84 @@
   --font-primary: 'Tahoma', sans-serif;
 }
 
+[data-theme="dracula"] {
+  --bg-main: #282a36;
+  --bg-surface: #44475a;
+  --bg-hover: #6272a4;
+  --fg-main: #f8f8f2;
+  --fg-muted: #bd93f9;
+  --fg-accent: #282a36;
+  --accent: #ff79c6;
+  --border-color: #6272a4;
+  --radius: 4px;
+  --font-primary: 'Fira Code', 'Segoe UI', monospace;
+}
+
+[data-theme="nord"] {
+  --bg-main: #2e3440;
+  --bg-surface: #3b4252;
+  --bg-hover: #434c5e;
+  --fg-main: #eceff4;
+  --fg-muted: #d8dee9;
+  --fg-accent: #2e3440;
+  --accent: #88c0d0;
+  --border-color: #4c566a;
+  --radius: 6px;
+  --font-primary: 'Rubik', Arial, sans-serif;
+}
+
+[data-theme="monokai"] {
+  --bg-main: #272822;
+  --bg-surface: #3e3d32;
+  --bg-hover: #49483e;
+  --fg-main: #f8f8f2;
+  --fg-muted: #75715e;
+  --fg-accent: #272822;
+  --accent: #a6e22e;
+  --border-color: #75715e;
+  --radius: 2px;
+  --font-primary: 'Monaco', 'Consolas', monospace;
+}
+
+[data-theme="solarized-light"] {
+  --bg-main: #fdf6e3;
+  --bg-surface: #eee8d5;
+  --bg-hover: #e0d9c6;
+  --fg-main: #657b83;
+  --fg-muted: #93a1a1;
+  --fg-accent: #fdf6e3;
+  --accent: #268bd2;
+  --border-color: #bd3612;
+  --radius: 0px;
+  --font-primary: 'Menlo', 'Courier New', monospace;
+}
+
+[data-theme="light-plus"] {
+  --bg-main: #FFFFFF;
+  --bg-surface: #F3F3F3;
+  --bg-hover: #E8E8E8;
+  --fg-main: #333333;
+  --fg-muted: #6C6C6C;
+  --fg-accent: #FFFFFF;
+  --accent: #007ACC;
+  --border-color: #CECECE;
+  --radius: 0px;
+  --font-primary: "Segoe WPC", "Segoe UI", sans-serif;
+}
+
+[data-theme="catppuccin-latte"] {
+  --bg-main: #eff1f5;
+  --bg-surface: #e6e9ef;
+  --bg-hover: #ccd0da;
+  --fg-main: #4c4f69;
+  --fg-muted: #6c6f85;
+  --fg-accent: #eff1f5;
+  --accent: #1e66f5;
+  --border-color: #bcc0cc;
+  --radius: 8px;
+  --font-primary: "Inter", "Segoe UI", sans-serif;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -132,6 +210,7 @@ select {
   flex: 0 0 auto;
   border-bottom: 1px var(--border-style) var(--border-color);
   margin: 0 -1.25rem;
+  margin-top: 0px;
   padding: 0.75rem 1.25rem;
   display: flex;
   justify-content: space-between;
@@ -310,7 +389,7 @@ select.theme-select {
 }
 
 .topic-column {
-  min-width: 280px;
+  min-width: 320px;
   max-width: 320px;
   flex: 0 0 280px;
   background-color: var(--bg-surface);
@@ -570,8 +649,8 @@ select.theme-select {
 
 /* Linear Progress Bars */
 .topics-progress-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
   flex: 1 1 auto;
   min-height: 0;

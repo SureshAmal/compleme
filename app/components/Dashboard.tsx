@@ -340,7 +340,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         className="topic-column"
-                        style={{ borderColor: color.border, '--topic-accent': color.accent, '--topic-bg': color.bg, ...provided.draggableProps.style } as React.CSSProperties}
+                        style={{ borderColor: color.border, '--topic-accent': color.accent, '--topic-bg': color.bg, ...provided.draggableProps.style } as any}
                       >
                         <div className="topic-header" style={{ borderBottomColor: color.border }}>
                           <div {...provided.dragHandleProps} className="topic-drag-handle" style={{ cursor: "grab", display: "flex", alignItems: "center", paddingRight: "8px", opacity: 0.4 }}>
