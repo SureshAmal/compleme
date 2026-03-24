@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Compleme
 
-## Getting Started
+Compleme is a high-performance, keyboard-accessible, and theme-aware task management dashboard built with Next.js and PostgreSQL. Designed with an IDE-inspired aesthetic, it helps developers and students organize their workflows using a robust Kanban-style interface.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **Drag and Drop Interface**: Reorder topics horizontally and drag todos vertically or across columns with lag-free, optimistic UI updates.
+* **Fractional Indexing**: Persistent state ordering without database locking or expensive array recalcutations.
+* **Theming Engine**: Dynamic CSS-variable based theming support for both light and dark modes (Zed, VS Code, GitHub, Dracula, Nord, Monokai, VS Light+, Solarized Light, and Catppuccin Latte).
+* **Workspace Analytics**: Real-time progress trackers and visual metrics using circular and linear data visualizations.
+* **Data Portability**: Full support for importing and exporting your entire workspace state as a CSV file.
+* **Optimistic UI**: Instant interaction feedback with underlying background syncing.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **Framework**: [Next.js](https://nextjs.org/) (App Router, Server Actions)
+* **Language**: TypeScript
+* **Database**: PostgreSQL (via `pg` native driver)
+* **Styling**: Pure CSS (No Tailwind)
+* **Drag & Drop**: `@hello-pangea/dnd`
+* **Package Manager**: [Bun](https://bun.sh/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 💻 Getting Started
 
-## Learn More
+### Prerequisites
+* [Bun](https://bun.sh/) installed on your machine.
+* A running instance of PostgreSQL.
 
-To learn more about Next.js, take a look at the following resources:
+### Local Initialization
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Clone the repository and install dependencies:**
+   ```bash
+   bun install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Configure Environment Variables:**
+   Create a `.env.local` file in the root directory and add your PostgreSQL connection string:
+   ```env
+   # .env.local
+   DATABASE_URL="postgres://username:password@localhost:5432/compleme"
+   ```
 
-## Deploy on Vercel
+3. **Initialize the Database Schema:**
+   Run the initialization script to generate the required tables:
+   ```bash
+   bun run scripts/init-db.ts
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Start the Development Server:**
+   ```bash
+   bun run dev
+   ```
+   *Your app will now be running on [http://localhost:3000](http://localhost:3000).*
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ☁️ Deployment
+
+Compleme is optimized for Vercel out of the box. 
+
+1. Ensure your Production database (e.g. Supabase, Neon) connection string is mapped to `DATABASE_URL` in your Vercel Environment variables.
+2. The included `vercel.json` ensures that Vercel uses `bun` to execute the build scripts correctly.
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).
