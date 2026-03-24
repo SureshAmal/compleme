@@ -17,12 +17,12 @@ export default async function Page() {
 
   if (categories.length > 0) {
     const catIds = categories.map(c => c.id);
-    const topicsRes = await db.query(`SELECT * FROM topics WHERE category_id = ANY($1) ORDER BY id ASC`, [catIds]);
+    const topicsRes = await db.query(`SELECT * FROM topics WHERE category_id = ANY($1) ORDER BY position ASC, id ASC`, [catIds]);
     topics = topicsRes.rows;
 
     if (topics.length > 0) {
       const topIds = topics.map(t => t.id);
-      const todosRes = await db.query(`SELECT * FROM todos WHERE topic_id = ANY($1) ORDER BY id ASC`, [topIds]);
+      const todosRes = await db.query(`SELECT * FROM todos WHERE topic_id = ANY($1) ORDER BY position ASC, id ASC`, [topIds]);
       todos = todosRes.rows;
     }
   }

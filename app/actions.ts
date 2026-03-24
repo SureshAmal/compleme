@@ -108,6 +108,20 @@ export async function renameCategory(id: number, name: string) {
   revalidatePath("/");
 }
 
+export async function reorderTopic(id: number, newPosition: number) {
+  const user = await getUserFromSession();
+  if (!user) return { error: "Not logged in" };
+  await db.query("UPDATE topics SET position = $1 WHERE id = $2", [newPosition, id]);
+  revalidatePath("/");
+}
+
+export async function reorderTodo(id: number, topicId: number, newPosition: number) {
+  const user = await getUserFromSession();
+  if (!user) return { error: "Not logged in" };
+  await db.query("UPDATE todos SET topic_id = $1, position = $2 WHERE id = $3", [topicId, newPosition, id]);
+  revalidatePath("/");
+}
+
 function parseCSVLine(str: string): string[] {
   const result: string[] = [];
   let inQuotes = false;

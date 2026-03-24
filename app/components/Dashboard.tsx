@@ -2,14 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme, type Theme } from "./ThemeProvider";
-import { addCategory, addTopic, addTodo, toggleTodo, logoutUser, deleteTodo, deleteTopic, deleteCategory, renameTodo, renameTopic, renameCategory, importCsvData } from "../actions";
+import { addCategory, addTopic, addTodo, toggleTodo, logoutUser, deleteTodo, deleteTopic, deleteCategory, renameTodo, renameTopic, renameCategory, importCsvData, reorderTopic, reorderTodo } from "../actions";
 import { ThemeSelect } from "./ThemeSelect";
 import { Modal, ConfirmModal } from "./Modal";
-import { CheckCircle2, Circle, Trash2, Plus, LogOut, ChevronRight, Upload, Download } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Plus, LogOut, ChevronRight, Upload, Download, GripVertical, GripHorizontal } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 type Category = { id: number, name: string };
-type Topic = { id: number, category_id: number, name: string };
-type Todo = { id: number, topic_id: number, text: string, is_completed: boolean };
+type Topic = { id: number, category_id: number, name: string, position: number };
+type Todo = { id: number, topic_id: number, text: string, is_completed: boolean, position: number };
 
 const TOPIC_COLORS = [
   { accent: '#0A84FF', bg: 'rgba(10, 132, 255, 0.08)', border: 'rgba(10, 132, 255, 0.25)' },
@@ -22,7 +23,6 @@ const TOPIC_COLORS = [
   { accent: '#AC8E68', bg: 'rgba(172, 142, 104, 0.08)', border: 'rgba(172, 142, 104, 0.25)' },
 ];
 
-// Inline editable text component
 function InlineEdit({ value, onSave, className, style }: { value: string, onSave: (val: string) => void, className?: string, style?: React.CSSProperties }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
@@ -65,6 +65,13 @@ function InlineEdit({ value, onSave, className, style }: { value: string, onSave
 
 export default function Dashboard({ username, initialCategories, initialTopics, initialTodos }: any) {
   const { theme, setTheme } = useTheme();
+  
+  const [topics, setTopics] = useState<Topic[]>(initialTopics);
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+
+  useEffect(() => { setTopics(initialTopics); }, [initialTopics]);
+  useEffect(() => { setTodos(initialTodos); }, [initialTodos]);
+
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(initialCategories.length > 0 ? initialCategories[0].id : null);
   const [newTodoValue, setNewTodoValue] = useState<Record<number, string>>({});
 
@@ -90,21 +97,17 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
     const exportRows: string[] = [];
 
     initialCategories.forEach((cat: Category) => {
-      const catTopics = initialTopics.filter((t: Topic) => t.category_id === cat.id);
+      const catTopics = topics.filter((t: Topic) => t.category_id === cat.id);
       
       if (catTopics.length === 0) {
-        // Empty category
         exportRows.push([escape(cat.name), "", "", ""].join(","));
       } else {
         catTopics.forEach((topic: Topic) => {
-          const topicTodos = initialTodos.filter((td: Todo) => td.topic_id === topic.id);
-          
+          const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id);
           if (topicTodos.length === 0) {
-            // Empty topic
             exportRows.push([escape(cat.name), escape(topic.name), "", ""].join(","));
           } else {
             topicTodos.forEach((todo: Todo) => {
-              // Full structure
               exportRows.push([
                 escape(cat.name),
                 escape(topic.name),
@@ -148,18 +151,88 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
     }
   };
 
-  const activeTopics = initialTopics.filter((t: Topic) => t.category_id === activeCategoryId);
+  const onDragEnd = async (result: any) => {
+    const { destination, source, draggableId, type } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    if (type === "topic") {
+      const activeTopicsList = topics.filter(t => t.category_id === activeCategoryId).sort((a, b) => a.position - b.position);
+      const movingTopic = activeTopicsList[source.index];
+      activeTopicsList.splice(source.index, 1);
+      activeTopicsList.splice(destination.index, 0, movingTopic);
+
+      let newPosition: number;
+      if (activeTopicsList.length === 1) {
+        newPosition = 1000;
+      } else if (destination.index === 0) {
+        newPosition = activeTopicsList[1].position - 1000;
+      } else if (destination.index === activeTopicsList.length - 1) {
+        newPosition = activeTopicsList[activeTopicsList.length - 2].position + 1000;
+      } else {
+        newPosition = (activeTopicsList[destination.index - 1].position + activeTopicsList[destination.index + 1].position) / 2.0;
+      }
+
+      movingTopic.position = newPosition;
+      
+      const globalTopics = [...topics];
+      const idx = globalTopics.findIndex(t => t.id === movingTopic.id);
+      globalTopics[idx] = movingTopic;
+      setTopics(globalTopics);
+
+      await reorderTopic(movingTopic.id, newPosition);
+      return;
+    }
+
+    if (type === "todo") {
+      const sourceTopicId = parseInt(source.droppableId.split('-')[1]);
+      const destTopicId = parseInt(destination.droppableId.split('-')[1]);
+      const todoId = parseInt(draggableId.split('-')[1]);
+
+      const destTodosList = todos.filter(t => t.topic_id === destTopicId).sort((a, b) => a.position - b.position);
+      let movingTodo = todos.find(t => t.id === todoId)!;
+
+      let listForCalc = [...destTodosList];
+      if (sourceTopicId === destTopicId) {
+        listForCalc.splice(source.index, 1);
+      }
+      listForCalc.splice(destination.index, 0, movingTodo);
+
+      let newPosition: number;
+      if (listForCalc.length === 1) {
+        newPosition = 1000;
+      } else if (destination.index === 0) {
+        newPosition = listForCalc[1].position - 1000;
+      } else if (destination.index === listForCalc.length - 1) {
+        newPosition = listForCalc[listForCalc.length - 2].position + 1000;
+      } else {
+        newPosition = (listForCalc[destination.index - 1].position + listForCalc[destination.index + 1].position) / 2.0;
+      }
+
+      movingTodo.position = newPosition;
+      movingTodo.topic_id = destTopicId;
+
+      const globalTodos = [...todos];
+      const idx = globalTodos.findIndex(t => t.id === movingTodo.id);
+      globalTodos[idx] = movingTodo;
+      setTodos(globalTodos);
+
+      await reorderTodo(movingTodo.id, destTopicId, newPosition);
+    }
+  };
+
+  const activeTopics = topics.filter((t: Topic) => t.category_id === activeCategoryId).sort((a,b) => a.position - b.position);
 
   // Analytics
   const topicStats = activeTopics.map((topic: Topic, idx: number) => {
-    const topicTodos = initialTodos.filter((td: Todo) => td.topic_id === topic.id);
+    const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id);
     const total = topicTodos.length;
     const completed = topicTodos.filter((td: Todo) => td.is_completed).length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { name: topic.name, percentage, fill: TOPIC_COLORS[idx % TOPIC_COLORS.length].accent };
   });
 
-  const allActiveTodos = initialTodos.filter((td: Todo) => activeTopics.some((t: Topic) => t.id === td.topic_id));
+  const allActiveTodos = todos.filter((td: Todo) => activeTopics.some((t: Topic) => t.id === td.topic_id));
   const totalActive = allActiveTodos.length;
   const totalActiveCompleted = allActiveTodos.filter((td: Todo) => td.is_completed).length;
   const pieData = totalActive > 0
@@ -248,78 +321,110 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
         </button>
       </div>
 
-      <div className="board-container">
-        {activeTopics.length === 0 && (
-          <div className="empty-state">
-            <p>No topics yet. Create one to get started!</p>
-          </div>
-        )}
-        {activeTopics.map((topic: Topic, idx: number) => {
-          const color = TOPIC_COLORS[idx % TOPIC_COLORS.length];
-          const topicTodos = initialTodos.filter((td: Todo) => td.topic_id === topic.id);
-          return (
-            <div
-              key={topic.id}
-              className="topic-column"
-              style={{ borderColor: color.border, '--topic-accent': color.accent, '--topic-bg': color.bg } as React.CSSProperties}
-            >
-              <div className="topic-header" style={{ borderBottomColor: color.border }}>
-                <InlineEdit
-                  value={topic.name}
-                  onSave={(name) => renameTopic(topic.id, name)}
-                  className="topic-title"
-                  style={{ color: color.accent }}
-                />
-                <button className="topic-delete hover-child" onClick={() => openDeleteConfirm("Delete Topic", `Delete "${topic.name}" and all its todos?`, () => deleteTopic(topic.id))} title="Delete Topic">
-                  <Trash2 size={14} />
-                </button>
-              </div>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="board" type="topic" direction="horizontal">
+          {(provided) => (
+            <div className="board-container" ref={provided.innerRef} {...provided.droppableProps}>
+              {activeTopics.length === 0 && (
+                <div className="empty-state">
+                  <p>No topics yet. Create one to get started!</p>
+                </div>
+              )}
+              {activeTopics.map((topic: Topic, idx: number) => {
+                const color = TOPIC_COLORS[idx % TOPIC_COLORS.length];
+                const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id).sort((a,b) => a.position - b.position);
+                return (
+                  <Draggable key={topic.id.toString()} draggableId={`topic-${topic.id}`} index={idx}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="topic-column"
+                        style={{ borderColor: color.border, '--topic-accent': color.accent, '--topic-bg': color.bg, ...provided.draggableProps.style } as React.CSSProperties}
+                      >
+                        <div className="topic-header" style={{ borderBottomColor: color.border }}>
+                          <div {...provided.dragHandleProps} className="topic-drag-handle" style={{ cursor: "grab", display: "flex", alignItems: "center", paddingRight: "8px", opacity: 0.4 }}>
+                            <GripHorizontal size={16} className="text-muted" />
+                          </div>
+                          <InlineEdit
+                            value={topic.name}
+                            onSave={(name) => renameTopic(topic.id, name)}
+                            className="topic-title"
+                            style={{ color: color.accent, flex: 1 }}
+                          />
+                          <button className="topic-delete hover-child" onClick={() => openDeleteConfirm("Delete Topic", `Delete "${topic.name}" and all its todos?`, () => deleteTopic(topic.id))} title="Delete Topic">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
 
-              <div className="todo-list">
-                {topicTodos.map((todo: Todo) => (
-                  <div key={todo.id} className={`todo-item ${todo.is_completed ? 'completed' : ''}`}>
-                    <button className="todo-check" onClick={() => toggleTodo(todo.id, !todo.is_completed)}>
-                      {todo.is_completed
-                        ? <CheckCircle2 size={18} style={{ color: color.accent }} />
-                        : <Circle size={18} className="text-muted" />
-                      }
-                    </button>
-                    <InlineEdit
-                      value={todo.text}
-                      onSave={(text) => renameTodo(todo.id, text)}
-                      className="todo-text"
-                    />
-                    <button className="todo-delete hover-child" onClick={() => openDeleteConfirm("Delete Todo", `Delete "${todo.text}"?`, () => deleteTodo(todo.id))} title="Delete Todo">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                        <Droppable droppableId={`topic-${topic.id}`} type="todo">
+                          {(provided) => (
+                            <div className="todo-list" ref={provided.innerRef} {...provided.droppableProps}>
+                              {topicTodos.map((todo: Todo, tIdx: number) => (
+                                <Draggable key={todo.id.toString()} draggableId={`todo-${todo.id}`} index={tIdx}>
+                                  {(provided) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      className={`todo-item ${todo.is_completed ? 'completed' : ''}`}
+                                      style={{...provided.draggableProps.style}}
+                                    >
+                                      <div {...provided.dragHandleProps} className="drag-handle" style={{ cursor: "grab", display: "flex", alignItems: "center", paddingRight: "4px", opacity: 0.4 }}>
+                                        <GripVertical size={14} className="text-muted" />
+                                      </div>
+                                      <button className="todo-check" onClick={() => toggleTodo(todo.id, !todo.is_completed)}>
+                                        {todo.is_completed
+                                          ? <CheckCircle2 size={18} style={{ color: color.accent }} />
+                                          : <Circle size={18} className="text-muted" />
+                                        }
+                                      </button>
+                                      <InlineEdit
+                                        value={todo.text}
+                                        onSave={(text) => renameTodo(todo.id, text)}
+                                        className="todo-text"
+                                      />
+                                      <button className="todo-delete hover-child" onClick={() => openDeleteConfirm("Delete Todo", `Delete "${todo.text}"?`, () => deleteTodo(todo.id))} title="Delete Todo">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
 
-              <div className="add-todo-form hover-add-target">
-                <input
-                  type="text"
-                  value={newTodoValue[topic.id] || ""}
-                  onChange={(e) => setNewTodoValue(prev => ({ ...prev, [topic.id]: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTodo(topic.id)}
-                  placeholder="New item..."
-                  className="add-todo-input"
-                />
-                <button className="btn btn-primary btn-icon" style={{ backgroundColor: color.accent, borderColor: color.accent }} onClick={() => handleAddTodo(topic.id)}>
-                  <Plus size={16} />
-                </button>
-              </div>
+                        <div className="add-todo-form hover-add-target">
+                          <input
+                            type="text"
+                            value={newTodoValue[topic.id] || ""}
+                            onChange={(e) => setNewTodoValue(prev => ({ ...prev, [topic.id]: e.target.value }))}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddTodo(topic.id)}
+                            placeholder="New item..."
+                            className="add-todo-input"
+                          />
+                          <button className="btn btn-primary btn-icon" style={{ backgroundColor: color.accent, borderColor: color.accent }} onClick={() => handleAddTodo(topic.id)}>
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                )
+              })}
+              {provided.placeholder}
+              {activeCategoryId && (
+                <div className="topic-column new-topic-column hover-add-target">
+                  <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: true, title: "New Topic Name", onSubmit: async (name) => { await addTopic(activeCategoryId, name); } })}>
+                    <Plus size={18} style={{ marginRight: '6px' }} /> Add Topic
+                  </button>
+                </div>
+              )}
             </div>
-          )
-        })}
-        {activeCategoryId && (
-          <div className="topic-column new-topic-column hover-add-target">
-            <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: true, title: "New Topic Name", onSubmit: async (name) => { await addTopic(activeCategoryId, name); } })}>
-              <Plus size={18} style={{ marginRight: '6px' }} /> Add Topic
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       <div className="analytics-container">
         <div className="analytics-header-section">
@@ -367,4 +472,3 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
     </>
   );
 }
-
