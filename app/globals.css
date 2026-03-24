@@ -907,4 +907,13 @@ select.theme-select {
   .progress-bar-container {
     width: 100%;
   }
+
+  .analytics-container {
+    max-height: none;
+  }
+
+  .topics-progress-list {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
