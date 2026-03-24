@@ -65,7 +65,7 @@ function InlineEdit({ value, onSave, className, style }: { value: string, onSave
 
 export default function Dashboard({ username, initialCategories, initialTopics, initialTodos }: any) {
   const { theme, setTheme } = useTheme();
-  
+
   const [topics, setTopics] = useState<Topic[]>(initialTopics);
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
 
@@ -79,7 +79,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean, title: string, onSubmit: (v: string) => void }>({ isOpen: false, title: "", onSubmit: () => { } });
   const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean, title: string, message: string, onConfirm: () => void }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -133,7 +133,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
     initialCategories.forEach((cat: Category) => {
       const catTopics = topics.filter((t: Topic) => t.category_id === cat.id);
-      
+
       if (catTopics.length === 0) {
         exportRows.push([escape(cat.name), "", "", ""].join(","));
       } else {
@@ -195,7 +195,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       const activeTopicsList = topics
         .filter(t => t.category_id === activeCategoryId)
         .sort((a, b) => (a.position - b.position) || (a.id - b.id));
-      
+
       const movingTopic = { ...activeTopicsList[source.index] };
       activeTopicsList.splice(source.index, 1);
       activeTopicsList.splice(destination.index, 0, movingTopic);
@@ -211,15 +211,15 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
         const prevPos = activeTopicsList[destination.index - 1].position;
         const nextPos = activeTopicsList[destination.index + 1].position;
         if (prevPos === nextPos) {
-           // If positions are identical (like all 0s), inject based on index
-           newPosition = prevPos + (destination.index * 10);
+          // If positions are identical (like all 0s), inject based on index
+          newPosition = prevPos + (destination.index * 10);
         } else {
-           newPosition = (prevPos + nextPos) / 2.0;
+          newPosition = (prevPos + nextPos) / 2.0;
         }
       }
 
       movingTopic.position = newPosition;
-      
+
       setTopics(prev => {
         const others = prev.filter(t => t.id !== movingTopic.id);
         return [...others, movingTopic].sort((a, b) => (a.position - b.position) || (a.id - b.id));
@@ -237,7 +237,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       const destTodosList = todos
         .filter(t => t.topic_id === destTopicId)
         .sort((a, b) => (a.position - b.position) || (a.id - b.id));
-      
+
       const originalTodo = todos.find(t => t.id === todoId)!;
       const movingTodo = { ...originalTodo };
 
@@ -269,14 +269,14 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
       setTodos(prev => {
         const others = prev.filter(t => t.id !== movingTodo.id);
-        return [...others, movingTodo].sort((a,b) => (a.position - b.position) || (a.id - b.id));
+        return [...others, movingTodo].sort((a, b) => (a.position - b.position) || (a.id - b.id));
       });
 
       await reorderTodo(movingTodo.id, destTopicId, newPosition);
     }
   };
 
-  const activeTopics = topics.filter((t: Topic) => t.category_id === activeCategoryId).sort((a,b) => a.position - b.position);
+  const activeTopics = topics.filter((t: Topic) => t.category_id === activeCategoryId).sort((a, b) => a.position - b.position);
 
   // Analytics
   const topicStats = activeTopics.map((topic: Topic, idx: number) => {
@@ -316,21 +316,21 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: '500', color: 'var(--fg-muted)', fontSize: '0.9rem', marginRight: '0.5rem' }}>{username}</span>
             <ThemeSelect theme={theme} setTheme={setTheme} />
-            
+
             <button className="btn btn-icon" onClick={handleExportCSV} title="Export to CSV">
               <Download size={16} />
             </button>
-            
-            <input 
-              type="file" 
-              accept=".csv" 
-              style={{ display: "none" }} 
-              ref={fileInputRef} 
-              onChange={handleImportCSV} 
+
+            <input
+              type="file"
+              accept=".csv"
+              style={{ display: "none" }}
+              ref={fileInputRef}
+              onChange={handleImportCSV}
             />
-            <button 
-              className="btn btn-icon" 
-              onClick={() => fileInputRef.current?.click()} 
+            <button
+              className="btn btn-icon"
+              onClick={() => fileInputRef.current?.click()}
               title="Import from CSV"
               disabled={isImporting}
               style={{ opacity: isImporting ? 0.5 : 1 }}
@@ -381,13 +381,10 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
           {(provided) => (
             <div className="board-container" ref={provided.innerRef} {...provided.droppableProps}>
               {activeTopics.length === 0 && (
-                <div className="empty-state">
-                  <p>No topics yet. Create one to get started!</p>
-                </div>
               )}
               {activeTopics.map((topic: Topic, idx: number) => {
                 const color = TOPIC_COLORS[idx % TOPIC_COLORS.length];
-                const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id).sort((a,b) => a.position - b.position);
+                const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id).sort((a, b) => a.position - b.position);
                 return (
                   <Draggable key={topic.id.toString()} draggableId={`topic-${topic.id}`} index={idx}>
                     {(provided) => (
@@ -422,7 +419,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
                                       className={`todo-item ${todo.is_completed ? 'completed' : ''}`}
-                                      style={{...provided.draggableProps.style}}
+                                      style={{ ...provided.draggableProps.style }}
                                     >
                                       <div {...provided.dragHandleProps} className="drag-handle" style={{ cursor: "grab", display: "flex", alignItems: "center", paddingRight: "4px", opacity: 0.4 }}>
                                         <GripVertical size={14} className="text-muted" />
@@ -460,7 +457,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                             className="add-todo-input"
                           />
                           <button className="btn btn-primary btn-icon" style={{ backgroundColor: color.accent, borderColor: color.accent }} onClick={() => handleAddTodo(topic.id)} disabled={addingTodoTo === topic.id}>
-                            {addingTodoTo === topic.id ? <div className="spinner" style={{ width: 16, height: 16, borderTopColor: 'var(--bg-main)', borderWidth: 2 }}/> : <Plus size={16} />}
+                            {addingTodoTo === topic.id ? <div className="spinner" style={{ width: 16, height: 16, borderTopColor: 'var(--bg-main)', borderWidth: 2 }} /> : <Plus size={16} />}
                           </button>
                         </div>
                       </div>
@@ -472,7 +469,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
               {activeCategoryId && (
                 <div className="topic-column new-topic-column hover-add-target">
                   <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: true, title: "New Topic Name", onSubmit: handleAddTopic.bind(null, activeCategoryId) })} disabled={isAddingTopic}>
-                    {isAddingTopic ? <div className="spinner" style={{ width: 16, height: 16, marginRight: 6, borderWidth: 2 }}/> : <Plus size={18} style={{ marginRight: '6px' }} />}
+                    {isAddingTopic ? <div className="spinner" style={{ width: 16, height: 16, marginRight: 6, borderWidth: 2 }} /> : <Plus size={18} style={{ marginRight: '6px' }} />}
                     {isAddingTopic ? "Adding..." : "Add Topic"}
                   </button>
                 </div>
