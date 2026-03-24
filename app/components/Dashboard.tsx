@@ -380,8 +380,6 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
         <Droppable droppableId="board" type="topic" direction="horizontal">
           {(provided) => (
             <div className="board-container" ref={provided.innerRef} {...provided.droppableProps}>
-              {activeTopics.length === 0 && (
-              )}
               {activeTopics.map((topic: Topic, idx: number) => {
                 const color = TOPIC_COLORS[idx % TOPIC_COLORS.length];
                 const topicTodos = todos.filter((td: Todo) => td.topic_id === topic.id).sort((a, b) => a.position - b.position);
