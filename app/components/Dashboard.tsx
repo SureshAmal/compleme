@@ -74,6 +74,8 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(initialCategories.length > 0 ? initialCategories[0].id : null);
   const [newTodoValue, setNewTodoValue] = useState<Record<number, string>>({});
+  const [addingTodoTo, setAddingTodoTo] = useState<number | null>(null);
+  const [isAddingTopic, setIsAddingTopic] = useState(false);
 
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean, title: string, onSubmit: (v: string) => void }>({ isOpen: false, title: "", onSubmit: () => { } });
   const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean, title: string, message: string, onConfirm: () => void }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
@@ -83,8 +85,41 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
   const handleAddTodo = async (topicId: number) => {
     if (!newTodoValue[topicId] || newTodoValue[topicId].trim() === "") return;
+    setAddingTodoTo(topicId);
     await addTodo(topicId, newTodoValue[topicId]);
     setNewTodoValue(prev => ({ ...prev, [topicId]: "" }));
+    setAddingTodoTo(null);
+  };
+
+  const handleToggleTodo = async (todoId: number, is_completed: boolean) => {
+    setTodos(todos.map(t => t.id === todoId ? { ...t, is_completed } : t));
+    await toggleTodo(todoId, is_completed);
+  };
+
+  const handleDeleteTodo = async (todoId: number) => {
+    setTodos(todos.filter(t => t.id !== todoId));
+    await deleteTodo(todoId);
+  };
+
+  const handleRenameTodo = async (todoId: number, text: string) => {
+    setTodos(todos.map(t => t.id === todoId ? { ...t, text } : t));
+    await renameTodo(todoId, text);
+  };
+
+  const handleDeleteTopic = async (topicId: number) => {
+    setTopics(topics.filter(t => t.id !== topicId));
+    await deleteTopic(topicId);
+  };
+
+  const handleRenameTopic = async (topicId: number, name: string) => {
+    setTopics(topics.map(t => t.id === topicId ? { ...t, name } : t));
+    await renameTopic(topicId, name);
+  };
+
+  const handleAddTopic = async (catId: number, name: string) => {
+    setIsAddingTopic(true);
+    await addTopic(catId, name);
+    setIsAddingTopic(false);
   };
 
   const openDeleteConfirm = (title: string, message: string, action: () => void) => {
@@ -348,11 +383,11 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                           </div>
                           <InlineEdit
                             value={topic.name}
-                            onSave={(name) => renameTopic(topic.id, name)}
+                            onSave={(name) => handleRenameTopic(topic.id, name)}
                             className="topic-title"
                             style={{ color: color.accent, flex: 1 }}
                           />
-                          <button className="topic-delete hover-child" onClick={() => openDeleteConfirm("Delete Topic", `Delete "${topic.name}" and all its todos?`, () => deleteTopic(topic.id))} title="Delete Topic">
+                          <button className="topic-delete hover-child" onClick={() => openDeleteConfirm("Delete Topic", `Delete "${topic.name}" and all its todos?`, () => handleDeleteTopic(topic.id))} title="Delete Topic">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -372,7 +407,7 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                                       <div {...provided.dragHandleProps} className="drag-handle" style={{ cursor: "grab", display: "flex", alignItems: "center", paddingRight: "4px", opacity: 0.4 }}>
                                         <GripVertical size={14} className="text-muted" />
                                       </div>
-                                      <button className="todo-check" onClick={() => toggleTodo(todo.id, !todo.is_completed)}>
+                                      <button className="todo-check" onClick={() => handleToggleTodo(todo.id, !todo.is_completed)}>
                                         {todo.is_completed
                                           ? <CheckCircle2 size={18} style={{ color: color.accent }} />
                                           : <Circle size={18} className="text-muted" />
@@ -380,10 +415,10 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                                       </button>
                                       <InlineEdit
                                         value={todo.text}
-                                        onSave={(text) => renameTodo(todo.id, text)}
+                                        onSave={(text) => handleRenameTodo(todo.id, text)}
                                         className="todo-text"
                                       />
-                                      <button className="todo-delete hover-child" onClick={() => openDeleteConfirm("Delete Todo", `Delete "${todo.text}"?`, () => deleteTodo(todo.id))} title="Delete Todo">
+                                      <button className="todo-delete hover-child" onClick={() => openDeleteConfirm("Delete Todo", `Delete "${todo.text}"?`, () => handleDeleteTodo(todo.id))} title="Delete Todo">
                                         <Trash2 size={14} />
                                       </button>
                                     </div>
@@ -404,8 +439,8 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                             placeholder="New item..."
                             className="add-todo-input"
                           />
-                          <button className="btn btn-primary btn-icon" style={{ backgroundColor: color.accent, borderColor: color.accent }} onClick={() => handleAddTodo(topic.id)}>
-                            <Plus size={16} />
+                          <button className="btn btn-primary btn-icon" style={{ backgroundColor: color.accent, borderColor: color.accent }} onClick={() => handleAddTodo(topic.id)} disabled={addingTodoTo === topic.id}>
+                            {addingTodoTo === topic.id ? <div className="spinner" style={{ width: 16, height: 16, borderTopColor: 'var(--bg-main)', borderWidth: 2 }}/> : <Plus size={16} />}
                           </button>
                         </div>
                       </div>
@@ -416,8 +451,9 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
               {provided.placeholder}
               {activeCategoryId && (
                 <div className="topic-column new-topic-column hover-add-target">
-                  <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: true, title: "New Topic Name", onSubmit: async (name) => { await addTopic(activeCategoryId, name); } })}>
-                    <Plus size={18} style={{ marginRight: '6px' }} /> Add Topic
+                  <button className="btn btn-ghost" onClick={() => setModalConfig({ isOpen: true, title: "New Topic Name", onSubmit: handleAddTopic.bind(null, activeCategoryId) })} disabled={isAddingTopic}>
+                    {isAddingTopic ? <div className="spinner" style={{ width: 16, height: 16, marginRight: 6, borderWidth: 2 }}/> : <Plus size={18} style={{ marginRight: '6px' }} />}
+                    {isAddingTopic ? "Adding..." : "Add Topic"}
                   </button>
                 </div>
               )}
