@@ -1,12 +1,21 @@
 import { Pool } from "pg";
 
 const setup = async () => {
-  const connectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/compleme";
-  const pool = new Pool({ connectionString });
+  const rawConnectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/compleme";
+  // Remove channel_binding which can cause hangs in some environments
+  const connectionString = rawConnectionString.split('?')[0];
+  const pool = new Pool({ 
+    connectionString,
+    ssl: true, // Neon requires SSL
+    connectionTimeoutMillis: 10000, // 10s timeout
+  });
 
   try {
+    console.log("Connecting to database...");
+    await pool.query('SELECT 1');
+    console.log("Connected successfully. Cleaning up old tables...");
     await pool.query('DROP TABLE IF EXISTS todos, topics, categories, sessions, users CASCADE');
-    
+    console.log("Creating tables...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -35,7 +44,8 @@ const setup = async () => {
       CREATE TABLE IF NOT EXISTS topics (
         id SERIAL PRIMARY KEY,
         category_id INT REFERENCES categories(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL
+        name VARCHAR(255) NOT NULL,
+        position DOUBLE PRECISION DEFAULT 0
       );
     `);
 
@@ -45,6 +55,7 @@ const setup = async () => {
         topic_id INT REFERENCES topics(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
         is_completed BOOLEAN DEFAULT false,
+        position DOUBLE PRECISION DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMP
       );

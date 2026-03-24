@@ -47,14 +47,14 @@ export async function addCategory(name: string) {
 export async function addTopic(categoryId: number, name: string) {
   const user = await getUserFromSession();
   if (!user) return { error: "Not logged in" };
-  await db.query("INSERT INTO topics (category_id, name) VALUES ($1, $2)", [categoryId, name]);
+  await db.query("INSERT INTO topics (category_id, name, position) VALUES ($1, $2, (SELECT COALESCE(MAX(position), 0) + 1000 FROM topics WHERE category_id = $1))", [categoryId, name]);
   revalidatePath("/");
 }
 
 export async function addTodo(topicId: number, text: string) {
   const user = await getUserFromSession();
   if (!user) return { error: "Not logged in" };
-  await db.query("INSERT INTO todos (topic_id, text) VALUES ($1, $2)", [topicId, text]);
+  await db.query("INSERT INTO todos (topic_id, text, position) VALUES ($1, $2, (SELECT COALESCE(MAX(position), 0) + 1000 FROM todos WHERE topic_id = $1))", [topicId, text]);
   revalidatePath("/");
 }
 

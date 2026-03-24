@@ -192,8 +192,11 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     if (type === "topic") {
-      const activeTopicsList = topics.filter(t => t.category_id === activeCategoryId).sort((a, b) => a.position - b.position);
-      const movingTopic = activeTopicsList[source.index];
+      const activeTopicsList = topics
+        .filter(t => t.category_id === activeCategoryId)
+        .sort((a, b) => (a.position - b.position) || (a.id - b.id));
+      
+      const movingTopic = { ...activeTopicsList[source.index] };
       activeTopicsList.splice(source.index, 1);
       activeTopicsList.splice(destination.index, 0, movingTopic);
 
@@ -205,15 +208,22 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       } else if (destination.index === activeTopicsList.length - 1) {
         newPosition = activeTopicsList[activeTopicsList.length - 2].position + 1000;
       } else {
-        newPosition = (activeTopicsList[destination.index - 1].position + activeTopicsList[destination.index + 1].position) / 2.0;
+        const prevPos = activeTopicsList[destination.index - 1].position;
+        const nextPos = activeTopicsList[destination.index + 1].position;
+        if (prevPos === nextPos) {
+           // If positions are identical (like all 0s), inject based on index
+           newPosition = prevPos + (destination.index * 10);
+        } else {
+           newPosition = (prevPos + nextPos) / 2.0;
+        }
       }
 
       movingTopic.position = newPosition;
       
-      const globalTopics = [...topics];
-      const idx = globalTopics.findIndex(t => t.id === movingTopic.id);
-      globalTopics[idx] = movingTopic;
-      setTopics(globalTopics);
+      setTopics(prev => {
+        const others = prev.filter(t => t.id !== movingTopic.id);
+        return [...others, movingTopic].sort((a, b) => (a.position - b.position) || (a.id - b.id));
+      });
 
       await reorderTopic(movingTopic.id, newPosition);
       return;
@@ -224,8 +234,12 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       const destTopicId = parseInt(destination.droppableId.split('-')[1]);
       const todoId = parseInt(draggableId.split('-')[1]);
 
-      const destTodosList = todos.filter(t => t.topic_id === destTopicId).sort((a, b) => a.position - b.position);
-      let movingTodo = todos.find(t => t.id === todoId)!;
+      const destTodosList = todos
+        .filter(t => t.topic_id === destTopicId)
+        .sort((a, b) => (a.position - b.position) || (a.id - b.id));
+      
+      const originalTodo = todos.find(t => t.id === todoId)!;
+      const movingTodo = { ...originalTodo };
 
       let listForCalc = [...destTodosList];
       if (sourceTopicId === destTopicId) {
@@ -241,16 +255,22 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       } else if (destination.index === listForCalc.length - 1) {
         newPosition = listForCalc[listForCalc.length - 2].position + 1000;
       } else {
-        newPosition = (listForCalc[destination.index - 1].position + listForCalc[destination.index + 1].position) / 2.0;
+        const prevPos = listForCalc[destination.index - 1].position;
+        const nextPos = listForCalc[destination.index + 1].position;
+        if (prevPos === nextPos) {
+          newPosition = prevPos + (destination.index * 10);
+        } else {
+          newPosition = (prevPos + nextPos) / 2.0;
+        }
       }
 
       movingTodo.position = newPosition;
       movingTodo.topic_id = destTopicId;
 
-      const globalTodos = [...todos];
-      const idx = globalTodos.findIndex(t => t.id === movingTodo.id);
-      globalTodos[idx] = movingTodo;
-      setTodos(globalTodos);
+      setTodos(prev => {
+        const others = prev.filter(t => t.id !== movingTodo.id);
+        return [...others, movingTodo].sort((a,b) => (a.position - b.position) || (a.id - b.id));
+      });
 
       await reorderTodo(movingTodo.id, destTopicId, newPosition);
     }
