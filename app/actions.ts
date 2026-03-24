@@ -10,8 +10,7 @@ export async function loginUser(username: string, pass: string) {
   if (res.rows.length === 0) return { error: "Invalid username or password" };
   
   const user = res.rows[0];
-  const hashed = hashPassword(pass);
-  if (user.password_hash !== hashed) return { error: "Invalid username or password" };
+  if (user.password !== pass) return { error: "Invalid username or password" };
   
   await createSession(user.id);
   redirect("/");
@@ -21,10 +20,9 @@ export async function registerUser(username: string, pass: string) {
   const existing = await db.query("SELECT * FROM users WHERE username = $1", [username]);
   if (existing.rows.length > 0) return { error: "Username already exists" };
   
-  const hashed = hashPassword(pass);
   const res = await db.query(
-    "INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id",
-    [username, hashed]
+    "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id",
+    [username, pass]
   );
   
   const newUserId = res.rows[0].id;

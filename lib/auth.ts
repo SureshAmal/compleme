@@ -5,8 +5,8 @@ import crypto from "crypto";
 const SESSION_COOKIE_NAME = "compleme_session";
 
 export function hashPassword(password: string): string {
-  // Ultra-simple lightweight hash for this compact app scale
-  return crypto.createHash('sha256').update(password).digest('hex');
+  // Plain text as requested
+  return password;
 }
 
 export function generateSessionId(): string {
