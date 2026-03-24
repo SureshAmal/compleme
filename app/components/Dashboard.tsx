@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme, type Theme } from "./ThemeProvider";
-import { addCategory, addTopic, addTodo, toggleTodo, logoutUser, deleteTodo, deleteTopic, deleteCategory, renameTodo, renameTopic, renameCategory } from "../actions";
+import { addCategory, addTopic, addTodo, toggleTodo, logoutUser, deleteTodo, deleteTopic, deleteCategory, renameTodo, renameTopic, renameCategory, importCsvData } from "../actions";
 import { ThemeSelect } from "./ThemeSelect";
 import { Modal, ConfirmModal } from "./Modal";
-import { CheckCircle2, Circle, Trash2, Plus, LogOut, ChevronRight } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Plus, LogOut, ChevronRight, Upload, Download } from "lucide-react";
 
 type Category = { id: number, name: string };
 type Topic = { id: number, category_id: number, name: string };
@@ -70,6 +70,9 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean, title: string, onSubmit: (v: string) => void }>({ isOpen: false, title: "", onSubmit: () => { } });
   const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean, title: string, message: string, onConfirm: () => void }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleAddTodo = async (topicId: number) => {
     if (!newTodoValue[topicId] || newTodoValue[topicId].trim() === "") return;
@@ -79,6 +82,70 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
 
   const openDeleteConfirm = (title: string, message: string, action: () => void) => {
     setConfirmConfig({ isOpen: true, title, message, onConfirm: action });
+  };
+
+  const handleExportCSV = () => {
+    let csvContent = "Category,Topic,Todo,Status\n";
+    const escape = (s: string) => `"${(s || '').replace(/"/g, '""')}"`;
+    const exportRows: string[] = [];
+
+    initialCategories.forEach((cat: Category) => {
+      const catTopics = initialTopics.filter((t: Topic) => t.category_id === cat.id);
+      
+      if (catTopics.length === 0) {
+        // Empty category
+        exportRows.push([escape(cat.name), "", "", ""].join(","));
+      } else {
+        catTopics.forEach((topic: Topic) => {
+          const topicTodos = initialTodos.filter((td: Todo) => td.topic_id === topic.id);
+          
+          if (topicTodos.length === 0) {
+            // Empty topic
+            exportRows.push([escape(cat.name), escape(topic.name), "", ""].join(","));
+          } else {
+            topicTodos.forEach((todo: Todo) => {
+              // Full structure
+              exportRows.push([
+                escape(cat.name),
+                escape(topic.name),
+                escape(todo.text),
+                todo.is_completed ? "completed" : "pending"
+              ].join(","));
+            });
+          }
+        });
+      }
+    });
+
+    csvContent += exportRows.join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "compleme_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const res = await importCsvData(text);
+      if (res?.error) {
+        alert("Import failed: " + res.error);
+      }
+    } catch (err: any) {
+      alert("Error reading file");
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const activeTopics = initialTopics.filter((t: Topic) => t.category_id === activeCategoryId);
@@ -118,9 +185,31 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       <header className="header">
         <div className="header-title">compleme</div>
         <div className="header-controls">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: '500', color: 'var(--fg-muted)', fontSize: '0.9rem' }}>{username}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: '500', color: 'var(--fg-muted)', fontSize: '0.9rem', marginRight: '0.5rem' }}>{username}</span>
             <ThemeSelect theme={theme} setTheme={setTheme} />
+            
+            <button className="btn btn-icon" onClick={handleExportCSV} title="Export to CSV">
+              <Download size={16} />
+            </button>
+            
+            <input 
+              type="file" 
+              accept=".csv" 
+              style={{ display: "none" }} 
+              ref={fileInputRef} 
+              onChange={handleImportCSV} 
+            />
+            <button 
+              className="btn btn-icon" 
+              onClick={() => fileInputRef.current?.click()} 
+              title="Import from CSV"
+              disabled={isImporting}
+              style={{ opacity: isImporting ? 0.5 : 1 }}
+            >
+              <Upload size={16} />
+            </button>
+
             <button className="btn btn-icon" onClick={() => logoutUser()} title="Logout">
               <LogOut size={16} />
             </button>

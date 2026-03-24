@@ -504,6 +504,7 @@ select.theme-select {
   flex-direction: column;
   gap: 1rem;
   margin-top: 0;
+  max-height: 30vh;
 }
 
 .analytics-header-section {
@@ -567,6 +568,10 @@ select.theme-select {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .topic-progress-row {
@@ -883,14 +888,6 @@ select.theme-select {
     width: 100%;
     flex: 1 1 auto;
     height: auto;
-    border-right: none;
-    border-bottom: 1px var(--border-style) var(--border-color);
-    padding-bottom: 1.5rem;
-    padding-right: 0;
-  }
-
-  .topic-column:last-child {
-    border-bottom: none;
   }
 
   .todo-list {

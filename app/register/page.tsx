@@ -26,20 +26,20 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Username</label>
-            <input 
-              type="text" 
-              required 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input 
-              type="password" 
-              required 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem", width: "100%" }}>Create Account</button>
@@ -47,17 +47,6 @@ export default function RegisterPage() {
         <p style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.9rem", color: "var(--fg-muted)" }}>
           Already have an account? <Link href="/login" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: "bold" }}>Login</Link>
         </p>
-        
-        <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "0.5rem", alignItems: "center", fontSize: "0.85rem" }}>
-          <span>Theme:</span>
-          <select className="theme-select" value={theme} onChange={(e) => setTheme(e.target.value as any)}>
-            <option value="zed">Zed</option>
-            <option value="vscode">VS Code</option>
-            <option value="github">GitHub</option>
-            <option value="sunset">Sunset</option>
-            <option value="sea">Sea</option>
-          </select>
-        </div>
       </div>
     </div>
   );
