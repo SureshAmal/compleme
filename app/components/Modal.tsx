@@ -21,11 +21,11 @@ interface ConfirmModalProps {
 export function Modal({ isOpen, title, onClose, onSubmit }: InputModalProps) {
   const [val, setVal] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setVal("");
-      // Focus input after render
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -38,6 +38,19 @@ export function Modal({ isOpen, title, onClose, onSubmit }: InputModalProps) {
         e.preventDefault();
         e.stopPropagation();
         onClose();
+      } else if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusableElements = modalRef.current.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -56,7 +69,7 @@ export function Modal({ isOpen, title, onClose, onSubmit }: InputModalProps) {
 
   return (
     <div className="modal-overlay" onMouseDown={onClose}>
-      <div className="modal-content" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal-content" ref={modalRef} onMouseDown={(e) => e.stopPropagation()}>
         <form onSubmit={handleSubmit} className="modal-form">
           <h3 className="modal-title">{title}</h3>
           <input 
@@ -81,6 +94,7 @@ export function ConfirmModal({ isOpen, title, message, onClose, onConfirm }: Con
   const [focusedBtn, setFocusedBtn] = useState<'cancel' | 'confirm'>('cancel');
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,7 +127,6 @@ export function ConfirmModal({ isOpen, title, message, onClose, onConfirm }: Con
           onClose();
         }
       } else if (e.key === "Delete" || e.key === "Backspace") {
-        // Delete key shortcut to confirm deletion
         e.preventDefault();
         onConfirm();
         onClose();
@@ -127,7 +140,7 @@ export function ConfirmModal({ isOpen, title, message, onClose, onConfirm }: Con
 
   return (
     <div className="modal-overlay" onMouseDown={onClose}>
-      <div className="modal-content modal-confirm" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal-content modal-confirm" ref={modalRef} onMouseDown={(e) => e.stopPropagation()}>
         <div className="confirm-icon">
           <AlertTriangle size={32} />
         </div>
