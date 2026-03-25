@@ -456,38 +456,23 @@ export default function Dashboard({
 
       const movingTopic = { ...activeTopicsList[source.index] };
 
-      // Create a new array for position calculation (before inserting movingTopic)
-      const reorderedList = [...activeTopicsList];
-      reorderedList.splice(source.index, 1);
-      // destination.index is now the position where the item would be AFTER removal
+      const newOrderedList = [...activeTopicsList];
+      newOrderedList.splice(source.index, 1);
+      newOrderedList.splice(destination.index, 0, movingTopic);
 
-      let newPosition: number;
-      if (reorderedList.length === 0) {
-        newPosition = 1000;
-      } else if (destination.index === 0) {
-        newPosition = reorderedList[0].position - 1000;
-      } else if (destination.index >= reorderedList.length) {
-        newPosition = reorderedList[reorderedList.length - 1].position + 1000;
-      } else {
-        const prevPos = reorderedList[destination.index - 1].position;
-        const nextPos = reorderedList[destination.index].position;
-        if (prevPos === nextPos) {
-          newPosition = prevPos + 1;
-        } else {
-          newPosition = (prevPos + nextPos) / 2.0;
-        }
+      const positionStep = 1000;
+      const updatedTopics = newOrderedList.map((topic, idx) => ({
+        ...topic,
+        position: (idx + 1) * positionStep
+      }));
+
+      const otherCategoryTopics = topics.filter(t => t.category_id !== activeCategoryId);
+      setTopics([...otherCategoryTopics, ...updatedTopics]);
+
+      for (const topic of updatedTopics) {
+        await reorderTopic(topic.id, topic.position);
       }
-
-      movingTopic.position = newPosition;
-
-      setTopics((prev) => {
-        const others = prev.filter((t) => t.id !== movingTopic.id);
-        return [...others, movingTopic].sort(
-          (a, b) => a.position - b.position || a.id - b.id,
-        );
-      });
-
-      await reorderTopic(movingTopic.id, newPosition);
+      
       return;
     }
 
@@ -503,54 +488,34 @@ export default function Dashboard({
       const originalTodo = todos.find((t) => t.id === todoId)!;
       const movingTodo = { ...originalTodo };
 
-      // Create a new array for position calculation
-      let listForCalc = [...destTodosList];
+      // Create new list with the todo in the destination position
+      let newOrderedList = [...destTodosList];
       if (sourceTopicId === destTopicId) {
-        // Adjust destination index if moving down in the same list
-        const adjustedDestIndex =
-          destination.index > source.index
-            ? destination.index - 1
-            : destination.index;
-        listForCalc.splice(source.index, 1);
-        listForCalc.splice(adjustedDestIndex, 0, movingTodo);
+        newOrderedList.splice(source.index, 1);
+        newOrderedList.splice(destination.index, 0, movingTodo);
       } else {
-        listForCalc.splice(destination.index, 0, movingTodo);
+        newOrderedList.splice(destination.index, 0, movingTodo);
       }
 
-      let newPosition: number;
-      if (listForCalc.length === 1) {
-        newPosition = 1000;
-      } else if (destination.index === 0) {
-        newPosition = listForCalc[1].position - 1000;
-      } else if (destination.index === listForCalc.length - 1) {
-        newPosition = listForCalc[listForCalc.length - 2].position + 1000;
-      } else {
-        const prevPos = listForCalc[destination.index - 1].position;
-        const nextPos = listForCalc[destination.index + 1].position;
-        if (prevPos === nextPos) {
-          newPosition = prevPos + destination.index * 10;
-        } else {
-          newPosition = (prevPos + nextPos) / 2.0;
-        }
-      }
+      // Assign sequential positions
+      const positionStep = 1000;
+      const updatedTodos = newOrderedList.map((todo, idx) => ({
+        ...todo,
+        position: (idx + 1) * positionStep
+      }));
 
-      movingTodo.position = newPosition;
-      movingTodo.topic_id = destTopicId;
-
+      // Update state - replace all todos in the destination topic with updated order
       setTodos((prev) => {
-        // Remove from old topic and update
-        let others = prev.filter((t) => t.id !== movingTodo.id);
-        // If moving to different topic, also filter out from dest topic's current todos
-        if (sourceTopicId !== destTopicId) {
-          // Add the moved todo with new position
-          return [...others, movingTodo];
-        }
-        return [...others, movingTodo].sort(
-          (a, b) => a.position - b.position || a.id - b.id,
-        );
+        // Remove all todos from the destination topic
+        const others = prev.filter((t) => t.topic_id !== destTopicId);
+        // Add all updated todos including the moved one
+        return [...others, ...updatedTodos];
       });
 
-      await reorderTodo(movingTodo.id, destTopicId, newPosition);
+      // Save to database - update all todos in the destination list
+      for (const todo of updatedTodos) {
+        await reorderTodo(todo.id, todo.topic_id, todo.position);
+      }
     }
   };
 

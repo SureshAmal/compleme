@@ -413,6 +413,7 @@ select.theme-select {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
+    overflow-y: hidden;
     flex: 1 1 auto;
     min-height: 0;
     padding: 0.2rem 0;
@@ -430,6 +431,8 @@ select.theme-select {
     flex-direction: column;
     height: 100%;
     gap: 1rem;
+    overflow: hidden;
+    overflow-x: clip;
 }
 
 .new-topic-column {
@@ -470,7 +473,7 @@ select.theme-select {
     gap: 0.5rem;
     flex: 1 1 auto;
     overflow-y: auto;
-    overflow-x: visible;
+    overflow-x: clip;
     min-height: 0;
     padding-right: 0.25rem;
 }
@@ -482,7 +485,7 @@ select.theme-select {
     padding: 0.5rem;
     border-radius: var(--radius);
     transition: background-color 0.2s;
-    overflow: visible;
+    overflow: clip;
 }
 
 .todo-item:hover {
