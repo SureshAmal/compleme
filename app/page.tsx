@@ -9,31 +9,40 @@ export default async function Page() {
     redirect("/login");
   }
 
-  const categoriesRes = await db.query('SELECT * FROM categories WHERE user_id = $1 ORDER BY id ASC', [user.id]);
+  const categoriesRes = await db.query(
+    "SELECT * FROM categories WHERE user_id = $1 ORDER BY id ASC",
+    [user.id],
+  );
   const categories = categoriesRes.rows;
 
   let topics: any[] = [];
   let todos: any[] = [];
 
   if (categories.length > 0) {
-    const catIds = categories.map(c => c.id);
-    const topicsRes = await db.query(`SELECT * FROM topics WHERE category_id = ANY($1) ORDER BY position ASC, id ASC`, [catIds]);
+    const catIds = categories.map((c) => c.id);
+    const topicsRes = await db.query(
+      `SELECT * FROM topics WHERE category_id = ANY($1) ORDER BY position ASC, id ASC`,
+      [catIds],
+    );
     topics = topicsRes.rows;
 
     if (topics.length > 0) {
-      const topIds = topics.map(t => t.id);
-      const todosRes = await db.query(`SELECT * FROM todos WHERE topic_id = ANY($1) ORDER BY position ASC, id ASC`, [topIds]);
+      const topIds = topics.map((t) => t.id);
+      const todosRes = await db.query(
+        `SELECT * FROM todos WHERE topic_id = ANY($1) ORDER BY position ASC, id ASC`,
+        [topIds],
+      );
       todos = todosRes.rows;
     }
   }
 
   return (
     <div className="app-container">
-      <Dashboard 
+      <Dashboard
         username={user.username}
-        initialCategories={categories} 
-        initialTopics={topics} 
-        initialTodos={todos} 
+        initialCategories={categories}
+        initialTopics={topics}
+        initialTodos={todos}
       />
     </div>
   );

@@ -14,10 +14,16 @@ const options = [
   { value: "monokai", label: "Monokai" },
   { value: "solarized-light", label: "Solarized Light" },
   { value: "light-plus", label: "VS Light+" },
-  { value: "catppuccin-latte", label: "Catppuccin Latte" }
+  { value: "catppuccin-latte", label: "Catppuccin Latte" },
 ];
 
-export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val: any) => void }) {
+export function ThemeSelect({
+  theme,
+  setTheme,
+}: {
+  theme: string;
+  setTheme: (val: any) => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,7 +32,10 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -38,7 +47,7 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
     if (isOpen && focusedIndex >= 0) {
       const el = document.getElementById(`theme-option-${focusedIndex}`);
       if (el) {
-        el.scrollIntoView({ block: 'nearest' });
+        el.scrollIntoView({ block: "nearest" });
       }
     }
   }, [isOpen, focusedIndex]);
@@ -51,7 +60,7 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
         setIsOpen(false);
       } else {
         setIsOpen(!isOpen);
-        setFocusedIndex(options.findIndex(o => o.value === theme));
+        setFocusedIndex(options.findIndex((o) => o.value === theme));
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -75,18 +84,24 @@ export function ThemeSelect({ theme, setTheme }: { theme: string, setTheme: (val
   };
 
   return (
-    <div 
-      ref={containerRef} 
-      className="custom-select-container" 
-      tabIndex={0} 
+    <div
+      ref={containerRef}
+      className="custom-select-container"
+      tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <div 
-        className="custom-select-trigger" 
-        onClick={() => { setIsOpen(!isOpen); setFocusedIndex(options.findIndex(o => o.value === theme)); }}
+      <div
+        className="custom-select-trigger"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setFocusedIndex(options.findIndex((o) => o.value === theme));
+        }}
       >
         <span>{selectedOption.label}</span>
-        <ChevronDown size={16} className={`custom-select-icon ${isOpen ? "open" : ""}`} />
+        <ChevronDown
+          size={16}
+          className={`custom-select-icon ${isOpen ? "open" : ""}`}
+        />
       </div>
 
       {isOpen && (

@@ -10,7 +10,7 @@ export function hashPassword(password: string): string {
 }
 
 export function generateSessionId(): string {
-  return crypto.randomBytes(16).toString('hex');
+  return crypto.randomBytes(16).toString("hex");
 }
 
 export async function createSession(userId: number) {
@@ -19,7 +19,7 @@ export async function createSession(userId: number) {
 
   await db.query(
     "INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)",
-    [sessionId, userId, expiresAt.toISOString()]
+    [sessionId, userId, expiresAt.toISOString()],
   );
 
   const cookieStore = await cookies();
@@ -28,7 +28,7 @@ export async function createSession(userId: number) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     expires: expiresAt,
-    path: "/"
+    path: "/",
   });
 }
 
@@ -50,9 +50,9 @@ export async function getUserFromSession() {
     `SELECT u.id, u.username FROM users u
      JOIN sessions s ON s.user_id = u.id
      WHERE s.id = $1 AND s.expires_at > NOW()`,
-    [sessionId]
+    [sessionId],
   );
-  
+
   if (res.rows.length === 0) return null;
   return res.rows[0];
 }

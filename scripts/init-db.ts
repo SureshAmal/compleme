@@ -1,19 +1,25 @@
 import { Pool } from "pg";
 
 const setup = async () => {
-  const rawConnectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/compleme";
-  const connectionString = rawConnectionString.split('?')[0];
-  const pool = new Pool({ 
+  const rawConnectionString =
+    process.env.DATABASE_URL ||
+    "postgres://postgres:postgres@localhost:5432/compleme";
+  const connectionString = rawConnectionString.split("?")[0];
+  const pool = new Pool({
     connectionString,
-    ssl: rawConnectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+    ssl: rawConnectionString.includes("neon.tech")
+      ? { rejectUnauthorized: false }
+      : false,
     connectionTimeoutMillis: 10000,
   });
 
   try {
     console.log("Connecting to database...");
-    await pool.query('SELECT 1');
+    await pool.query("SELECT 1");
     console.log("Connected successfully. Cleaning up old tables...");
-    await pool.query('DROP TABLE IF EXISTS todos, topics, categories, sessions, users CASCADE');
+    await pool.query(
+      "DROP TABLE IF EXISTS todos, topics, categories, sessions, users CASCADE",
+    );
     console.log("Creating tables...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
