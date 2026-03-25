@@ -306,21 +306,23 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
         .sort((a, b) => (a.position - b.position) || (a.id - b.id));
 
       const movingTopic = { ...activeTopicsList[source.index] };
-      activeTopicsList.splice(source.index, 1);
-      activeTopicsList.splice(destination.index, 0, movingTopic);
+      
+      // Create a new array for position calculation
+      const reorderedList = [...activeTopicsList];
+      reorderedList.splice(source.index, 1);
+      reorderedList.splice(destination.index, 0, movingTopic);
 
       let newPosition: number;
-      if (activeTopicsList.length === 1) {
+      if (reorderedList.length === 1) {
         newPosition = 1000;
       } else if (destination.index === 0) {
-        newPosition = activeTopicsList[1].position - 1000;
-      } else if (destination.index === activeTopicsList.length - 1) {
-        newPosition = activeTopicsList[activeTopicsList.length - 2].position + 1000;
+        newPosition = reorderedList[1].position - 1000;
+      } else if (destination.index === reorderedList.length - 1) {
+        newPosition = reorderedList[reorderedList.length - 2].position + 1000;
       } else {
-        const prevPos = activeTopicsList[destination.index - 1].position;
-        const nextPos = activeTopicsList[destination.index + 1].position;
+        const prevPos = reorderedList[destination.index - 1].position;
+        const nextPos = reorderedList[destination.index + 1].position;
         if (prevPos === nextPos) {
-          // If positions are identical (like all 0s), inject based on index
           newPosition = prevPos + (destination.index * 10);
         } else {
           newPosition = (prevPos + nextPos) / 2.0;
@@ -350,11 +352,16 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       const originalTodo = todos.find(t => t.id === todoId)!;
       const movingTodo = { ...originalTodo };
 
+      // Create a new array for position calculation
       let listForCalc = [...destTodosList];
       if (sourceTopicId === destTopicId) {
+        // Adjust destination index if moving down in the same list
+        const adjustedDestIndex = destination.index > source.index ? destination.index - 1 : destination.index;
         listForCalc.splice(source.index, 1);
+        listForCalc.splice(adjustedDestIndex, 0, movingTodo);
+      } else {
+        listForCalc.splice(destination.index, 0, movingTodo);
       }
-      listForCalc.splice(destination.index, 0, movingTodo);
 
       let newPosition: number;
       if (listForCalc.length === 1) {
@@ -377,7 +384,13 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
       movingTodo.topic_id = destTopicId;
 
       setTodos(prev => {
-        const others = prev.filter(t => t.id !== movingTodo.id);
+        // Remove from old topic and update
+        let others = prev.filter(t => t.id !== movingTodo.id);
+        // If moving to different topic, also filter out from dest topic's current todos
+        if (sourceTopicId !== destTopicId) {
+          // Add the moved todo with new position
+          return [...others, movingTodo];
+        }
         return [...others, movingTodo].sort((a, b) => (a.position - b.position) || (a.id - b.id));
       });
 

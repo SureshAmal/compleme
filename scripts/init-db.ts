@@ -2,12 +2,11 @@ import { Pool } from "pg";
 
 const setup = async () => {
   const rawConnectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/compleme";
-  // Remove channel_binding which can cause hangs in some environments
   const connectionString = rawConnectionString.split('?')[0];
   const pool = new Pool({ 
     connectionString,
-    ssl: true, // Neon requires SSL
-    connectionTimeoutMillis: 10000, // 10s timeout
+    ssl: rawConnectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
   });
 
   try {

@@ -462,7 +462,7 @@ select.theme-select {
 
 .todo-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
   border-radius: var(--radius);
@@ -516,6 +516,9 @@ select.theme-select {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  padding: 4px;
 }
 
 .todo-item:hover .todo-delete {
@@ -646,9 +649,9 @@ select.theme-select {
   opacity: 1 !important;
 }
 
-.topic-column:hover .hover-child,
-.todo-item:hover .hover-child,
-.tab-wrapper:hover .hover-child {
+.topic-column:hover > .topic-header > .topic-delete,
+.todo-item:hover > .todo-delete,
+.tab-wrapper:hover > .tab-delete {
   opacity: 1;
 }
 
