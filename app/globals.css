@@ -455,6 +455,7 @@ select.theme-select {
   gap: 0.5rem;
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: visible;
   min-height: 0;
   padding-right: 0.25rem;
 }
@@ -466,6 +467,7 @@ select.theme-select {
   padding: 0.5rem;
   border-radius: var(--radius);
   transition: background-color 0.2s;
+  overflow: visible;
 }
 
 .todo-item:hover {
@@ -503,6 +505,10 @@ select.theme-select {
   color: var(--fg-muted);
 }
 
+.todo-item.completed {
+  overflow: visible;
+}
+
 .todo-delete {
   background: transparent;
   border: none;
@@ -518,6 +524,58 @@ select.theme-select {
 
 .todo-delete:hover {
   color: #ff4d4f;
+}
+
+.todo-text-wrapper {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+}
+
+.todo-tooltip-wrapper {
+  position: fixed;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+}
+
+.todo-tooltip-wrapper.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.todo-tooltip-content {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.todo-tooltip-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.todo-tooltip-row + .todo-tooltip-row {
+  margin-top: 0.25rem;
+}
+
+.todo-tooltip-label {
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.todo-tooltip-value {
+  color: var(--fg-main);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
 }
 
 /* Inline Edit */

@@ -10,7 +10,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 type Category = { id: number, name: string };
 type Topic = { id: number, category_id: number, name: string, position: number };
-type Todo = { id: number, topic_id: number, text: string, is_completed: boolean, position: number };
+type Todo = { id: number, topic_id: number, text: string, is_completed: boolean, position: number, created_at: string, completed_at: string | null };
 
 const TOPIC_COLORS = [
   { accent: '#0A84FF', bg: 'rgba(10, 132, 255, 0.08)', border: 'rgba(10, 132, 255, 0.25)' },
@@ -22,6 +22,39 @@ const TOPIC_COLORS = [
   { accent: '#FFD60A', bg: 'rgba(255, 214, 10, 0.08)', border: 'rgba(255, 214, 10, 0.25)' },
   { accent: '#AC8E68', bg: 'rgba(172, 142, 104, 0.08)', border: 'rgba(172, 142, 104, 0.25)' },
 ];
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  const minuteStr = minutes.toString().padStart(2, '0');
+  return `${month} ${day}, ${year}, ${hour12}:${minuteStr} ${ampm}`;
+}
+
+function TodoTooltip({ createdAt, completedAt }: { createdAt: string, completedAt: string | null }) {
+  return (
+    <div className="todo-tooltip-wrapper">
+      <div className="todo-tooltip-content">
+        <div className="todo-tooltip-row">
+          <span className="todo-tooltip-label">Created:</span>
+          <span className="todo-tooltip-value">{formatDate(createdAt)}</span>
+        </div>
+        {completedAt && (
+          <div className="todo-tooltip-row">
+            <span className="todo-tooltip-label">Completed:</span>
+            <span className="todo-tooltip-value">{formatDate(completedAt)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function InlineEdit({ value, onSave, className, style }: { value: string, onSave: (val: string) => void, className?: string, style?: React.CSSProperties }) {
   const [editing, setEditing] = useState(false);
@@ -55,7 +88,6 @@ function InlineEdit({ value, onSave, className, style }: { value: string, onSave
     <span
       className={`inline-edit-text ${className || ''}`}
       onClick={() => setEditing(true)}
-      title="Click to rename"
       style={{ ...style, cursor: 'text' }}
     >
       {value}
@@ -65,6 +97,82 @@ function InlineEdit({ value, onSave, className, style }: { value: string, onSave
 
 export default function Dashboard({ username, initialCategories, initialTopics, initialTodos }: any) {
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    const originalWarn = console.warn;
+    console.warn = (...args: any[]) => {
+      if (args[0]?.includes?.('nested scroll container')) return;
+      originalWarn.apply(console, args);
+    };
+    return () => { console.warn = originalWarn; };
+  }, []);
+
+  const positionTooltip = (wrapper: HTMLElement) => {
+    const textWrapper = wrapper.parentElement as HTMLElement;
+    if (!textWrapper) return;
+    const rect = textWrapper.getBoundingClientRect();
+    const tooltipContent = wrapper.querySelector('.todo-tooltip-content') as HTMLElement;
+    if (!tooltipContent) return;
+    const tooltipWidth = tooltipContent.offsetWidth;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    
+    let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+    if (left < 10) left = 10;
+    if (left + tooltipWidth > window.innerWidth - 10) {
+      left = window.innerWidth - tooltipWidth - 10;
+    }
+    
+    let top: number;
+    if (spaceBelow < 80) {
+      top = rect.top - 8;
+    } else {
+      top = rect.bottom + 8;
+    }
+    
+    wrapper.style.left = `${left}px`;
+    wrapper.style.top = `${top}px`;
+  };
+
+  useEffect(() => {
+    const wrappers = document.querySelectorAll('.todo-tooltip-wrapper') as NodeListOf<HTMLElement>;
+    wrappers.forEach((wrapper) => {
+      positionTooltip(wrapper);
+    });
+
+    const handleMouseEnter = (e: MouseEvent) => {
+      if (!(e.target instanceof HTMLElement)) return;
+      const textWrapper = e.target.closest('.todo-text-wrapper') as HTMLElement;
+      if (!textWrapper) return;
+      const tooltip = textWrapper.querySelector('.todo-tooltip-wrapper') as HTMLElement;
+      if (tooltip) {
+        positionTooltip(tooltip);
+        tooltip.classList.add('visible');
+      }
+    };
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (!(e.target instanceof HTMLElement)) return;
+      const textWrapper = e.target.closest('.todo-text-wrapper') as HTMLElement;
+      if (!textWrapper) return;
+      const tooltip = textWrapper.querySelector('.todo-tooltip-wrapper') as HTMLElement;
+      if (tooltip) {
+        tooltip.classList.remove('visible');
+      }
+    };
+
+    document.addEventListener('mouseenter', handleMouseEnter, true);
+    document.addEventListener('mouseleave', handleMouseLeave, true);
+    window.addEventListener('resize', () => {
+      wrappers.forEach(positionTooltip);
+    });
+    return () => {
+      document.removeEventListener('mouseenter', handleMouseEnter, true);
+      document.removeEventListener('mouseleave', handleMouseLeave, true);
+      window.removeEventListener('resize', () => {
+        wrappers.forEach(positionTooltip);
+      });
+    };
+  }, []);
 
   const [topics, setTopics] = useState<Topic[]>(initialTopics);
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
@@ -92,7 +200,8 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
   };
 
   const handleToggleTodo = async (todoId: number, is_completed: boolean) => {
-    setTodos(todos.map(t => t.id === todoId ? { ...t, is_completed } : t));
+    const newCompletedAt = is_completed ? new Date().toISOString() : null;
+    setTodos(todos.map(t => t.id === todoId ? { ...t, is_completed, completed_at: newCompletedAt } : t));
     await toggleTodo(todoId, is_completed);
   };
 
@@ -428,11 +537,14 @@ export default function Dashboard({ username, initialCategories, initialTopics, 
                                           : <Circle size={18} className="text-muted" />
                                         }
                                       </button>
-                                      <InlineEdit
-                                        value={todo.text}
-                                        onSave={(text) => handleRenameTodo(todo.id, text)}
-                                        className="todo-text"
-                                      />
+                                        <div className="todo-text-wrapper">
+                                        <InlineEdit
+                                          value={todo.text}
+                                          onSave={(text) => handleRenameTodo(todo.id, text)}
+                                          className="todo-text"
+                                        />
+                                        <TodoTooltip createdAt={todo.created_at} completedAt={todo.completed_at} />
+                                      </div>
                                       <button className="todo-delete hover-child" onClick={() => openDeleteConfirm("Delete Todo", `Delete "${todo.text}"?`, () => handleDeleteTodo(todo.id))} title="Delete Todo">
                                         <Trash2 size={14} />
                                       </button>

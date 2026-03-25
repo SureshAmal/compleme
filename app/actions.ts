@@ -59,7 +59,9 @@ export async function addTodo(topicId: number, text: string) {
 export async function toggleTodo(id: number, isCompleted: boolean) {
   const user = await getUserFromSession();
   if (!user) return { error: "Not logged in" };
-  const completedAt = isCompleted ? new Date().toISOString() : null;
+  const now = new Date();
+  const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
+  const completedAt = isCompleted ? localIso : null;
   await db.query("UPDATE todos SET is_completed = $1, completed_at = $2 WHERE id = $3", [isCompleted, completedAt, id]);
   revalidatePath("/");
 }
